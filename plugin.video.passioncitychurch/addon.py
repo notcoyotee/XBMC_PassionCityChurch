@@ -1,30 +1,54 @@
-import urllib,urllib2,re,xbmcplugin,xbmcgui,time
-dialog = xbmcgui.Dialog()
+import urllib,urllib2,re,xbmcgui,xbmcplugin,time
+import HTMLParser
+pars = HTMLParser.HTMLParser()
+from BeautifulSoup import BeautifulSoup as BeautifulSoup
+
 SpecListOfVideos = [ ]
+AllMessages=[ ]
+AllSeries=[ ]
+AllDates=[ ]
+
 def CATEGORIES():
-        addDir("HighQuality","http://www.passioncitychurch.com/watch",1,"")
+        addDir("High Quality","http://www.passioncitychurch.com/watch",1,"")
+        addDir("Medium Quality","http://www.passioncitychurch.com/watch",1,"")
+        addDir("Low Quality","http://www.passioncitychurch.com/watch",1,"")
                        
 def INDEX(url):
         req = urllib2.Request(url)
         req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
         response = urllib2.urlopen(req)
         link=response.read()
+        soup = BeautifulSoup(link)
+  
+        for eachMessage in soup.findAll("td", {"class":"message"}):
+            AllMessages.append(eachMessage.text)
+        for eachSeries in soup.findAll("td", {"class":"series"}):
+            AllSeries.append(eachSeries.text)
+        for eachDate in soup.findAll("td", {"class":"date"}):
+            AllDates.append(eachDate.text)
         response.close()
         match=re.compile('.*?((?:(?:[1]{1}\\d{1}\\d{1}\\d{1})|(?:[2]{1}\\d{3})))(?![\\d])(\\/)(PCC)(-)(\\d+)(-)((?:[a-z][a-z]*[0-9]+[a-z0-9]*))(-)(High)(\\.)(mov)',re.IGNORECASE).findall(link)
         for s in match:
                 specificVideo="".join(map(str,s)).translate(None, "', ()")
- 
                 re1='.*?(PCC)(-)(\\d+)(-)(V)(\\d+)'
                 rg = re.compile(re1,re.IGNORECASE|re.DOTALL)
                 m = rg.search(specificVideo)
-      
-
                 SpecListOfVideos.append(specificVideo)
-                videoURL= "http://bitcast-g.bitgravity.com/passioncon/passioncitychurch/messages/"+specificVideo
-                addLink(specificVideo,videoURL,'')
-        for listitem in SpecListOfVideos:
-                print "GBC : List item "+listitem
-#21:19:44 T:3104  NOTICE: GBC : Adding link http://bitcast-g.bitgravity.com/passioncon/passioncitychurch/messages/2013/PCC-021713-V2-High.mov
+
+        for ix in range(len(AllMessages)):
+            videoURL= "http://bitcast-g.bitgravity.com/passioncon/passioncitychurch/messages/"+SpecListOfVideos[ix]
+            if name=="Medium Quality":
+                videoURL=videoURL.replace("High","Medium")
+            if name=="Low Quality":
+                videoURL=videoURL.replace("High","Low")
+            print "GBC : video is :"+videoURL
+
+            messageName=pars.unescape(AllMessages[ix])
+            seriesName=AllSeries[ix]
+            if not seriesName:
+                 seriesName="Generic"
+            videoDate=AllDates[ix]
+            addLink(seriesName+" : " +messageName+" : " + videoDate,videoURL,'')
 
 def VIDEOLINKS(url,name):
         req = urllib2.Request(url)
@@ -35,9 +59,7 @@ def VIDEOLINKS(url,name):
         match=re.compile('').findall(link)
         for url in match:
                 addLink(name,url,'')
-        
-
-                
+                        
 def get_params():
         param=[]
         paramstring=sys.argv[2]

@@ -1,0 +1,5 @@
+1.0.1
+ - Added Medium, Low quality video options
+
+1.0.0
+ - initial release
